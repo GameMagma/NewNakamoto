@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 import interactions
 from interactions import slash_command, SlashContext, OptionType, slash_option, listen
 
-load_dotenv()
 bot = interactions.Client(intents=interactions.Intents.ALL)
 
 
@@ -28,6 +27,16 @@ async def ping(ctx: SlashContext):
     await ctx.send("Pong!")
 
 
+@slash_command(
+    name="about",
+    description="General information about the bot",
+)
+async def about(ctx: SlashContext):
+    await ctx.send("Created by Connor Midgley.\n"
+                   "Source code available at https://github.com/GameMagma/NewNakamoto \n"
+                   "Version 2.0.2")
+
+
 # === INITIATIVE COMMANDS ===
 
 
@@ -46,25 +55,7 @@ async def initiative_clear(ctx: SlashContext):
     name="initiative",
     description="Commands for the initiative tracker.",
     sub_cmd_name="roll",
-    sub_cmd_description="Submit a roll for the current encounter"
-)
-@slash_option(
-    name="roll_result",
-    description="The number you rolled.",
-    required=True,
-    opt_type=OptionType.INTEGER
-)
-async def initiative_roll(ctx: SlashContext, roll_result: int):
-    # Add roll to the roll list
-    set_roll(ctx.author.id, roll_result)
-    await ctx.send(f"Roll of {roll_result} added.")
-
-
-@slash_command(
-    name="initiative",
-    description="Commands for the initiative tracker.",
-    sub_cmd_name="npc_roll",
-    sub_cmd_description="Submit an NPC's roll for the current encounter."
+    sub_cmd_description="Submit a roll for the current encounter. If you don't set a name, it will use your name."
 )
 @slash_option(
     name="roll_result",
@@ -73,15 +64,19 @@ async def initiative_roll(ctx: SlashContext, roll_result: int):
     opt_type=OptionType.INTEGER
 )
 @slash_option(
-    name="npc_name",
-    description="The name of the NPC.",
-    required=True,
+    name="name",
+    description="The name of the character.",
+    required=False,
     opt_type=OptionType.STRING
 )
-async def initiative_npc_roll(ctx: SlashContext, roll_result: int, npc_name: str):
+async def initiative_roll(ctx: SlashContext, roll_result: int, name: str = None):
     # Add roll to the roll list
-    set_roll(npc_name, roll_result)
-    await ctx.send(f"Roll of {roll_result} added for {npc_name}.")
+    if name is None:
+        set_roll(ctx.author.id, roll_result)
+        await ctx.send(f"Roll of {roll_result} added.")
+    else:  # If a name was specified, use that instead of the user's name
+        set_roll(name, roll_result)
+        await ctx.send(f"Roll of {roll_result} added for {name}.")
 
 
 @slash_command(
@@ -99,6 +94,7 @@ async def initiative_get_order(ctx: SlashContext):
         for i, (key, value) in enumerate(rolls):
             msg += f"{i + 1}. {key} ({value})\n"
         await ctx.send(msg)
+
 
 roll_list = {}  # List of rolls for the current encounter
 
@@ -130,4 +126,5 @@ def set_roll(characterID: int | str, die_result: int) -> None:
     roll_list.update({characterID: die_result})
 
 
+load_dotenv()
 bot.start(os.getenv("DISCORD_TOKEN"))
