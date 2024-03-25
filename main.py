@@ -2,12 +2,17 @@ import os
 from dotenv import load_dotenv
 
 import interactions
-from interactions import slash_command, SlashContext, OptionType, slash_option, listen
-from interactions import message_context_menu, ContextMenuContext, Message
+from interactions import slash_command, SlashContext, OptionType, slash_option, listen, ModalContext
+from interactions import message_context_menu, ContextMenuContext, Message, Modal, ShortText
 
 load_dotenv()
 
 bot = interactions.Client(intents=interactions.Intents.ALL)
+
+# === GLOBALS ===
+# One day I'll integrate this into a place that uses less memory. Today is not that day, and neither is tomorrow
+categories = ["Worst Idea", "Best Idea", "Biggest Lie", "Worst Bit", "Best Bit", "Least Funny Recurring Joke",
+              "Craziest Working Gaslight", "Funniest Recurring Joke", "Dumbest Discussion"]
 
 
 # === EVENTS ===
@@ -61,7 +66,32 @@ async def nominate(ctx: ContextMenuContext):
     :param ctx: The message this command was called on
     """
     msg: Message = ctx.target
+    category_selection = Modal(
+        ShortText(
+            label="Category",
+            placeholder="Type the exact name of the category to nominate for",
+            custom_id="category"),
+        title="Nominate",
+        custom_id="category_selection"
+    )
+    await ctx.send_modal(modal=category_selection) # Send a modal that collects the category to nominate
 
+    # Wait for modal response, then retrieve
+    modal_ctx: ModalContext = await ctx.bot.wait_for_modal(category_selection)
+
+    # Extract responses
+    category = modal_ctx.responses["category"]
+
+    # Check to make sure category exists
+    if category not in categories:
+        await modal_ctx.send(f"{category} is an invalid category. Please try again.", ephemeral=True)
+        return
+
+    # Send the category to the SQL database
+
+
+
+    await modal_ctx.send(f"Category: {category}", ephemeral=True)  # Debugging
 
 
 
