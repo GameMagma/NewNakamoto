@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 
 import interactions
 from interactions import slash_command, SlashContext, OptionType, slash_option, listen
+from interactions import message_context_menu, ContextMenuContext, Message
+
+load_dotenv()
 
 bot = interactions.Client(intents=interactions.Intents.ALL)
 
@@ -35,6 +38,31 @@ async def about(ctx: SlashContext):
     await ctx.send("Created by Connor Midgley.\n"
                    "Source code available at https://github.com/GameMagma/NewNakamoto \n"
                    "Version 2.0.2")
+
+
+# === CONTEXT MENU COMMANDS ===
+@message_context_menu(
+    name="repeat",
+    scopes=[os.getenv("TEST_GUILD_ID")]
+)
+async def repeat(ctx: ContextMenuContext):
+    msg: Message = ctx.target
+    await ctx.send(f"You said: {msg.content}")
+
+
+@message_context_menu(
+    name="Nominate",
+    scopes=[os.getenv("TEST_GUILD_ID")]
+)
+async def nominate(ctx: ContextMenuContext):
+    """
+    Comes up with a selection of the current year's categories to nominate the selected message for.
+
+    :param ctx: The message this command was called on
+    """
+    msg: Message = ctx.target
+
+
 
 
 # === INITIATIVE COMMANDS ===
@@ -126,5 +154,4 @@ def set_roll(characterID: int | str, die_result: int) -> None:
     roll_list.update({characterID: die_result})
 
 
-load_dotenv()
-bot.start(os.getenv("DISCORD_TOKEN"))
+bot.start(os.getenv("TEST_DISCORD_TOKEN"))
