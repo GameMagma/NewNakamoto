@@ -25,6 +25,9 @@ class SQLManager:
         self.cursor = self.cnx.cursor(buffered=True)  # This is used to interact with the actual database
         print("Connection Established.\n\n")
 
+    def is_closed(self) -> bool:
+        return self.cnx.is_connected()
+
     def updateUser(self, user: User):
         """
         Checks to see if a user has been added to the database yet.
@@ -64,7 +67,7 @@ class SQLManager:
 
     def add_transaction(self, sender: int, receiver: int, amount: int):
         query_addTransaction = "INSERT INTO `transactions`(`sender`, `receiver`, `amount`, `status`) " \
-                "VALUES ('%s','%s','%s','PENDING')"
+                               "VALUES ('%s','%s','%s','PENDING')"
 
         self.cursor.execute(query_addTransaction, (sender, receiver, amount))
 
@@ -135,7 +138,7 @@ class SQLManager:
         if favors is None:
             return -1
         else:
-            favors += amount # Update favors
+            favors += amount  # Update favors
             query_updateWallet = "UPDATE wallet SET cryptofavors = %s WHERE userID = %s"
             self.cursor.execute(query_updateWallet, (favors, userID))
             self.cnx.commit()
@@ -176,13 +179,28 @@ class SQLManager:
             self.cnx.commit()
             return True
 
-    def get_nomination(self, userID: int = None, guildID: int = None, channelID: int = None, messageID: int = None) -> list:
+    def get_nomination(
+            self, userID: int = None, category: str = None,
+            guildID: int = None, channelID: int = None, messageID: int = None) -> list:
+        """
+        Gets nominations from the database. Will return a list of tuples in the format of:
+        [(NominationID, GuildID, ChannelID, MessageID, AuthorID, Category, message), ...]
+        :param userID: ID of the user who nominated the message. Should be a Snowflake type.
+        :param category: Category of the nomination.
+        :param guildID: ID of the guild where the nomination was made. Should be a Snowflake type.
+        :param channelID: ID of the channel where the nomination was made. Should be a Snowflake type.
+        :param messageID: ID of the message that was nominated. Should be a Snowflake type.
+        :return:
+        """
         if (userID is None) and (guildID is None) and (channelID is None) and (messageID is None):
             # Runs query() in SQLConnection, then fetches the result from the cursor
             self.cursor.execute("SELECT * FROM nominations")
             return self.cursor.fetchall()
 
-
+    def get_categories(self) -> list:
+        query_getCategories = "SELECT * FROM categories"
+        self.cursor.execute(query_getCategories)
+        return self.cursor.fetchall()
 
     def close(self):
         """Closes the connection"""

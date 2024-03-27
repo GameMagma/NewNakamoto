@@ -2,7 +2,8 @@ import os
 from dotenv import load_dotenv
 
 import interactions
-from interactions import slash_command, SlashContext, OptionType, slash_option, listen, ModalContext
+from interactions import slash_command, SlashContext, OptionType, slash_option, listen, ModalContext, User, \
+    SlashCommandChoice
 from interactions import message_context_menu, ContextMenuContext, Message, Modal, ShortText
 
 from SQLManager import SQLManager
@@ -13,9 +14,18 @@ bot = interactions.Client(intents=interactions.Intents.ALL)
 
 # === GLOBALS ===
 # One day I'll integrate this into a place that uses less memory. Today is not that day, and neither is tomorrow
-categories = ["Worst Idea", "Best Idea", "Biggest Lie", "Worst Bit", "Best Bit", "Least Funny Recurring Joke",
-              "Craziest Working Gaslight", "Funniest Recurring Joke", "Dumbest Discussion"]
 database = SQLManager()  # Database connection
+# categories = ["Worst Idea", "Best Idea", "Biggest Lie", "Worst Bit", "Best Bit", "Least Funny Recurring Joke",
+#               "Craziest Working Gaslight", "Funniest Recurring Joke", "Dumbest Discussion"]
+
+categories = database.get_categories()
+categories = [c[0] for c in categories]
+print("Found categories: ", categories)
+
+# Options for the nominations command
+choices_nominations = []
+for category in categories:
+    choices_nominations.append(SlashCommandChoice(name=category, value=category))
 
 
 # === EVENTS ===
@@ -196,6 +206,35 @@ def set_roll(characterID: int | str, die_result: int) -> None:
     :param die_result: Number that was rolled
     """
     roll_list.update({characterID: die_result})
+
+
+# === Admin ===
+@slash_command(
+    name="admin",
+    description="Commands for the bot administrator",
+    scopes=[os.getenv("TEST_GUILD_ID")],
+    sub_cmd_name="close_connection",
+    sub_cmd_description="Closes connection to the database"
+)
+async def admin_close_connection(ctx: SlashContext):
+    database.close()
+    await ctx.send("Connection to the database closed.")
+
+# Command to restart the connection to the database. Check if it's closed already. If so, close it. Finally, open a new connection.
+@slash_command(
+    name="admin",
+    description="Commands for the bot administrator",
+    scopes=[os.getenv("TEST_GUILD_ID")],
+    sub_cmd_name="restart_connection",
+    sub_cmd_description="Restarts the connection to the database"
+)
+async def admin_restart_connection(ctx: SlashContext):
+    if database.is_closed():
+        database.close()
+
+    globals()['database'] = SQLManager()  # Reset the database connection
+
+    await ctx.send("Connection to the database restarted.")
 
 
 bot.start(os.getenv("DISCORD_TOKEN"))
