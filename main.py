@@ -55,9 +55,10 @@ async def ping(ctx: SlashContext):
 async def about(ctx: SlashContext):
     await ctx.send("Created by Connor Midgley.\n"
                    "Source code available at https://github.com/GameMagma/NewNakamoto \n"
-                   "Version 3.0.0"
-                   "New features:"
-                   "- You can now nominate messages for The Orwell Awards")
+                   "Version 3.1.1\n"
+                   "New features:\n"
+                   "- You can now nominate messages for The Orwell Awards\n",
+                   ephemeral=True)
 
 
 @slash_command(
