@@ -5,6 +5,8 @@ import interactions
 from interactions import slash_command, SlashContext, OptionType, slash_option, listen, ModalContext
 from interactions import message_context_menu, ContextMenuContext, Message, Modal, ShortText
 
+from SQLManager import SQLManager
+
 load_dotenv()
 
 bot = interactions.Client(intents=interactions.Intents.ALL)
@@ -13,6 +15,7 @@ bot = interactions.Client(intents=interactions.Intents.ALL)
 # One day I'll integrate this into a place that uses less memory. Today is not that day, and neither is tomorrow
 categories = ["Worst Idea", "Best Idea", "Biggest Lie", "Worst Bit", "Best Bit", "Least Funny Recurring Joke",
               "Craziest Working Gaslight", "Funniest Recurring Joke", "Dumbest Discussion"]
+database = SQLManager()  # Database connection
 
 
 # === EVENTS ===
@@ -42,7 +45,18 @@ async def ping(ctx: SlashContext):
 async def about(ctx: SlashContext):
     await ctx.send("Created by Connor Midgley.\n"
                    "Source code available at https://github.com/GameMagma/NewNakamoto \n"
-                   "Version 2.0.2")
+                   "Version 3.0.0"
+                   "New features:"
+                   "- You can now nominate messages for The Orwell Awards")
+
+
+@slash_command(
+    name="dbtest",
+    description="Tests the database connection.",
+    scopes=[os.getenv("TEST_GUILD_ID")]
+)
+async def dbtest(ctx: SlashContext):
+    await ctx.send(database.get_wallet(ctx.author.id)[1])
 
 
 # === CONTEXT MENU COMMANDS ===
@@ -57,7 +71,6 @@ async def repeat(ctx: ContextMenuContext):
 
 @message_context_menu(
     name="Nominate",
-    scopes=[os.getenv("TEST_GUILD_ID")]
 )
 async def nominate(ctx: ContextMenuContext):
     """
@@ -74,29 +87,30 @@ async def nominate(ctx: ContextMenuContext):
         title="Nominate",
         custom_id="category_selection"
     )
-    await ctx.send_modal(modal=category_selection) # Send a modal that collects the category to nominate
+    await ctx.send_modal(modal=category_selection)  # Send a modal that collects the category to nominate
 
     # Wait for modal response, then retrieve
     modal_ctx: ModalContext = await ctx.bot.wait_for_modal(category_selection)
 
     # Extract responses
-    category = modal_ctx.responses["category"]
+    category = modal_ctx.responses["category"].title()
 
     # Check to make sure category exists
-    if category not in categories:
+    if category.lower() not in [cat.lower() for cat in categories]:
         await modal_ctx.send(f"{category} is an invalid category. Please try again.", ephemeral=True)
         return
 
     # Send the category to the SQL database
+    successful = database.add_nomination(ctx.author.id, ctx.guild.id, ctx.channel.id, category, msg.id, msg.content)
+    # await modal_ctx.send(str(database.get_nomination()))  # Debugging
 
-
-
-    await modal_ctx.send(f"Category: {category}", ephemeral=True)  # Debugging
-
+    if successful:
+        await modal_ctx.send(f"Nomination for {category} added successfully.", reply_to=msg.id)
+    else:
+        await modal_ctx.send("The database had an error. Please let me know about this.", ephemeral=True)
 
 
 # === INITIATIVE COMMANDS ===
-
 
 @slash_command(
     name="initiative",

@@ -14,7 +14,7 @@ load_dotenv()  # Loads the .env file
 
 
 class SQLManager:
-    cnx: MySQLConnection  # The connection used to connect to the database
+    # cnx: MySQLConnection  # The connection used to connect to the database
 
     def __init__(self):
         # self._connection = SQLConnection()
@@ -22,7 +22,7 @@ class SQLManager:
         self.cnx = mysql.connector.connect(user=os.getenv("SQL_USER"), password=os.getenv("SQL_PASSWORD"),
                                            host=os.getenv("SQL_HOST"), port=os.getenv("SQL_PORT"),
                                            database=os.getenv("SQL_DATABASE"))
-        self.cursor = self.cnx.cursor()  # This is used to interact with the actual database
+        self.cursor = self.cnx.cursor(buffered=True)  # This is used to interact with the actual database
         print("Connection Established.\n\n")
 
     def updateUser(self, user: User):
@@ -50,7 +50,7 @@ class SQLManager:
             self.cursor.execute(query_updateUser, (str(user.username), str(user.id)))
             self.cnx.commit()
 
-    def get_wallet(self, userID: int) -> list:
+    def get_wallet(self, userID: int) -> tuple:
         """
         Gets the wallet of the designated user.
 
@@ -139,6 +139,50 @@ class SQLManager:
             query_updateWallet = "UPDATE wallet SET cryptofavors = %s WHERE userID = %s"
             self.cursor.execute(query_updateWallet, (favors, userID))
             self.cnx.commit()
+
+    def add_nomination(self, authorID: int, guildID: int, channelID: int, category: str,
+                       messageID: int, message: str = None):
+        """
+        Adds the nomination to the database. Is this table super overcomplicated? Probably. But it works.
+        :return: True if successful, False otherwise
+        """
+
+        print("Adding nomination...")
+
+        if message is not None:
+            # Prune string down to the first 255 characters or less to abide by SQL's VARCHAR limit
+            message = message[:255]
+
+        # Create query
+        query_addNomination = ("INSERT INTO `nominations`(`authorID`, `guildID`, `channelID`, `messageID`, `message`,"
+                               "`category`) "
+                               "VALUES (%s,%s,%s,%s,%s,%s)")
+
+        try:
+            # Execute query
+            self.cursor.execute(query_addNomination, (authorID, guildID, channelID, messageID, message, category))
+
+            # Check if the nomination was added by grabbing the last inserted ID and comparing
+            query_selectLast = "SELECT LAST_INSERT_ID()"
+            self.cursor.execute(query_selectLast)
+
+            # # Debugging
+            # result = self.cursor.fetchone()
+            # print(f"Nomination ID in SQLManager: {result[0]}")
+        except Exception as e:
+            print(f"Error adding nomination with messageID {messageID}: {e}")
+            return False
+        else:
+            self.cnx.commit()
+            return True
+
+    def get_nomination(self, userID: int = None, guildID: int = None, channelID: int = None, messageID: int = None) -> list:
+        if (userID is None) and (guildID is None) and (channelID is None) and (messageID is None):
+            # Runs query() in SQLConnection, then fetches the result from the cursor
+            self.cursor.execute("SELECT * FROM nominations")
+            return self.cursor.fetchall()
+
+
 
     def close(self):
         """Closes the connection"""
