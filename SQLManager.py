@@ -180,22 +180,46 @@ class SQLManager:
             return True
 
     def get_nomination(
-            self, userID: int = None, category: str = None,
-            guildID: int = None, channelID: int = None, messageID: int = None) -> list:
+            self, author_id: int | User = None, category: str = None,
+            guild_id: int = None, channel_id: int = None, message_id: int = None) -> list[tuple]:
         """
-        Gets nominations from the database. Will return a list of tuples in the format of:
-        [(NominationID, GuildID, ChannelID, MessageID, AuthorID, Category, message), ...]
-        :param userID: ID of the user who nominated the message. Should be a Snowflake type.
+        Gets select nominations from the database.
+
+        :param author_id: ID of the user who nominated the message. Should be a Snowflake type.
         :param category: Category of the nomination.
-        :param guildID: ID of the guild where the nomination was made. Should be a Snowflake type.
-        :param channelID: ID of the channel where the nomination was made. Should be a Snowflake type.
-        :param messageID: ID of the message that was nominated. Should be a Snowflake type.
-        :return:
+        :param guild_id: ID of the guild where the nomination was made. Can be a Snowflake (int) or a User type.
+        :param channel_id: ID of the channel where the nomination was made. Should be in Snowflake format
+        :param message_id: ID of the message that was nominated. Should be in Snowflake format.
+        :return: A list of tuples in the format of:
+        [(NominationID, GuildID, ChannelID, MessageID, AuthorID, Category, message), ...] or will return None.
         """
-        if (userID is None) and (guildID is None) and (channelID is None) and (messageID is None):
-            # Runs query() in SQLConnection, then fetches the result from the cursor
-            self.cursor.execute("SELECT * FROM nominations")
-            return self.cursor.fetchall()
+
+        # Base query
+        query = "SELECT * FROM nominations WHERE 1"
+
+        # Conditions for optional parameters
+        conditions = []
+        if guild_id is not None:
+            conditions.append(f"guildID = {guild_id}")
+        if channel_id is not None:
+            conditions.append(f"channelID = {channel_id}")
+        if message_id is not None:
+            conditions.append(f"messageID = {message_id}")
+        if author_id is not None:
+            if author_id is User:
+                author_id = author_id.id
+
+            conditions.append(f"authorID = {author_id}")
+        if category is not None:
+            conditions.append(f"category = '{category}'")
+
+        # Combine conditions into the query
+        if conditions:
+            query += " AND " + " AND ".join(conditions)
+
+        # Execute the query
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
 
     def get_categories(self) -> list:
         query_getCategories = "SELECT * FROM categories"
