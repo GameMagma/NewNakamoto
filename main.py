@@ -198,4 +198,4 @@ def set_roll(characterID: int | str, die_result: int) -> None:
     roll_list.update({characterID: die_result})
 
 
-bot.start(os.getenv("TEST_DISCORD_TOKEN"))
+bot.start(os.getenv("DISCORD_TOKEN"))
