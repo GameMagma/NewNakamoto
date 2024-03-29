@@ -17,6 +17,7 @@ bot = interactions.Client(intents=interactions.Intents.ALL)
 database = SQLManager()  # Database connection
 # categories = ["Worst Idea", "Best Idea", "Biggest Lie", "Worst Bit", "Best Bit", "Least Funny Recurring Joke",
 #               "Craziest Working Gaslight", "Funniest Recurring Joke", "Dumbest Discussion"]
+_VERSION = "3.2.2"
 
 categories = database.get_categories()
 categories = [c[0] for c in categories]
@@ -34,6 +35,7 @@ for category in categories:
 @listen()
 async def on_startup():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
+    print(f"Version {_VERSION}")
     print("------\n")
 
 
@@ -53,9 +55,9 @@ async def ping(ctx: SlashContext):
     description="General information about the bot",
 )
 async def about(ctx: SlashContext):
-    await ctx.send("Created by Connor Midgley.\n"
+    await ctx.send(f"Created by Connor Midgley.\n"
                    "Source code available at https://github.com/GameMagma/NewNakamoto \n"
-                   "Version 3.2.1\n"
+                   f"Version {_VERSION}\n"
                    "New features:\n"
                    "- You can now nominate messages for The Orwell Awards\n"
                    "- You can now view the nominations for The Orwell Awards\n",
