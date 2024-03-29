@@ -17,7 +17,7 @@ bot = interactions.Client(intents=interactions.Intents.ALL)
 database = SQLManager()  # Database connection
 # categories = ["Worst Idea", "Best Idea", "Biggest Lie", "Worst Bit", "Best Bit", "Least Funny Recurring Joke",
 #               "Craziest Working Gaslight", "Funniest Recurring Joke", "Dumbest Discussion"]
-_VERSION = "3.2.2"
+_VERSION = "3.2.3"
 
 categories = database.get_categories()
 categories = [c[0] for c in categories]
@@ -34,8 +34,8 @@ for category in categories:
 
 @listen()
 async def on_startup():
+    print(f"Bot Version {_VERSION}, Interactions Library version {interactions.__version__}")
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
-    print(f"Version {_VERSION}")
     print("------\n")
 
 
@@ -60,7 +60,8 @@ async def about(ctx: SlashContext):
                    f"Version {_VERSION}\n"
                    "New features:\n"
                    "- You can now nominate messages for The Orwell Awards\n"
-                   "- You can now view the nominations for The Orwell Awards\n",
+                   "- You can now view the nominations for The Orwell Awards\n"
+                   "- Buh",
                    ephemeral=True)
 
 
@@ -252,6 +253,7 @@ async def initiative_get_order(ctx: SlashContext):
         await ctx.send(msg)
 
 
+# A global all the way down here? Isn't that bad practice? Yes. Yes it is.
 roll_list = {}  # List of rolls for the current encounter
 
 
@@ -295,7 +297,8 @@ async def admin_close_connection(ctx: SlashContext):
     await ctx.send("Connection to the database closed.")
 
 
-# Command to restart the connection to the database. Check if it's closed already. If so, close it. Finally, open a new connection.
+# Command to restart the connection to the database. Check if it's closed already. If so, close it. Finally,
+# open a new connection.
 @slash_command(
     name="admin",
     description="Commands for the bot administrator",
@@ -310,6 +313,45 @@ async def admin_restart_connection(ctx: SlashContext):
     globals()['database'] = SQLManager()  # Reset the database connection
 
     await ctx.send("Connection to the database restarted.")
+
+
+@slash_command(
+    name="admin",
+    description="Commands for the bot administrator",
+    scopes=[os.getenv("TEST_GUILD_ID")],
+    sub_cmd_name="say",
+    sub_cmd_description="Make the bot say something."
+)
+@slash_option(
+    name="message",
+    description="The message for the bot to say.",
+    required=True,
+    opt_type=OptionType.STRING
+)
+async def admin_say(ctx: SlashContext, message: str):
+    if ctx.author_id == 456269883873951744:
+        await ctx.send("Repeating:", ephemeral=True)
+        await ctx.channel.send(message)
+    else:
+        await ctx.send("You do not have permission to use this command.", ephemeral=True)
+
+
+@slash_command(
+    name="admin",
+    description="Commands for the bot administrator",
+    scopes=[os.getenv("TEST_GUILD_ID")],
+    sub_cmd_name="shutdown",
+    sub_cmd_description="Shuts down the bot."
+)
+async def shutdown(ctx: SlashContext):
+    if ctx.author_id == 456269883873951744:
+        print("Asked to shut down. Goodbye.")
+        await ctx.send("Shutting down.")
+        if not database.is_closed():
+            database.close()
+        await bot.stop()
+    else:
+        await ctx.send("You do not have permission to use this command.", ephemeral=True)
 
 
 bot.start(os.getenv("DISCORD_TOKEN"))
