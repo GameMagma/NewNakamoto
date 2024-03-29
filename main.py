@@ -17,7 +17,7 @@ bot = interactions.Client(intents=interactions.Intents.ALL)
 database = SQLManager()  # Database connection
 # categories = ["Worst Idea", "Best Idea", "Biggest Lie", "Worst Bit", "Best Bit", "Least Funny Recurring Joke",
 #               "Craziest Working Gaslight", "Funniest Recurring Joke", "Dumbest Discussion"]
-_VERSION = "3.2.4"
+_VERSION = "3.2.5"
 
 categories = database.get_categories()
 categories = [c[0] for c in categories]
@@ -61,7 +61,8 @@ async def about(ctx: SlashContext):
                    "New features:\n"
                    "- You can now nominate messages for The Orwell Awards\n"
                    "- You can now view the nominations for The Orwell Awards\n"
-                   "- Buh",
+                   "- Buh\n"
+                   "- Statuses Added\n",
                    ephemeral=True)
 
 
@@ -331,6 +332,74 @@ async def admin_say(ctx: SlashContext, message: str):
     if ctx.author_id == 456269883873951744:
         await ctx.send("Repeating:", ephemeral=True)
         await ctx.channel.send(message)
+    else:
+        await ctx.send("You do not have permission to use this command.", ephemeral=True)
+
+
+@slash_command(
+    name="status",
+    description="Commands for status management",
+    sub_cmd_name="set",
+    sub_cmd_description="Set the bot's status."
+)
+@slash_option(
+    name="status",
+    description="The status to set.",
+    required=True,
+    opt_type=OptionType.STRING,
+    choices=[
+        SlashCommandChoice(name="online", value="online"),
+        SlashCommandChoice(name="idle", value="idle"),
+        SlashCommandChoice(name="dnd", value="dnd"),
+        SlashCommandChoice(name="invisible", value="invisible")
+    ],
+)
+@slash_option(
+    name="activity_type",
+    description="The activity to set. Only used if status is online",
+    required=False,
+    opt_type=OptionType.STRING,
+    choices=[
+        SlashCommandChoice(name="playing", value="playing"),
+        SlashCommandChoice(name="streaming", value="streaming"),
+        SlashCommandChoice(name="listening", value="listening"),
+        SlashCommandChoice(name="watching", value="watching"),
+        SlashCommandChoice(name="competing", value="competing")
+    ]
+)
+@slash_option(
+    name="activity",
+    description="The activity to set. If you set an activity type, you need to set this too.",
+    required=False,
+    opt_type=OptionType.STRING
+)
+async def status_set(ctx: SlashContext, status: str, activity_type: str = None, activity: str = None):
+    if ctx.author_id == 456269883873951744:
+        if status == "online":
+            if activity_type is not None and activity is not None:
+                # Convert activity type to the correct type
+                match activity_type:
+                    case "playing":
+                        activity_type = interactions.ActivityType.PLAYING
+                    case "streaming":
+                        activity_type = interactions.ActivityType.STREAMING
+                    case "listening":
+                        activity_type = interactions.ActivityType.LISTENING
+                    case "watching":
+                        activity_type = interactions.ActivityType.WATCHING
+                    case "competing":
+                        activity_type = interactions.ActivityType.COMPETING
+                    case _:
+                        activity_type = interactions.ActivityType.PLAYING
+
+                # Set the status
+                await bot.change_presence(
+                    status=status, activity=interactions.Activity(name=activity, type=activity_type))
+            else:
+                await bot.change_presence(status=status)
+        else:
+            await bot.change_presence(status=status)
+        await ctx.send("Status set.")
     else:
         await ctx.send("You do not have permission to use this command.", ephemeral=True)
 
