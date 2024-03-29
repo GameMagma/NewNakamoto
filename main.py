@@ -55,7 +55,7 @@ async def ping(ctx: SlashContext):
 async def about(ctx: SlashContext):
     await ctx.send("Created by Connor Midgley.\n"
                    "Source code available at https://github.com/GameMagma/NewNakamoto \n"
-                   "Version 3.2.0\n"
+                   "Version 3.2.1\n"
                    "New features:\n"
                    "- You can now nominate messages for The Orwell Awards\n"
                    "- You can now view the nominations for The Orwell Awards\n",
@@ -98,37 +98,46 @@ async def get_nominations(ctx: SlashContext, nominator: User = None, category: s
         # Format: [(NominationID, GuildID, ChannelID, MessageID, AuthorID, Category, message), ...]
         msg = "Nominations:\n"
 
+        print("Formatting")
+
         # TODO: Refactor this try block to be 3 separate try blocks: One for each fetch
-        try:
-            for nomination in result:
-                # "get_user"/channel/guild only grabs from the bot's cache. "fetch" actually polls the API for it (if
-                # it's not in the cache)
-                author = await bot.fetch_user(nomination[4])
-                author = f"<@{author.id}>"  # Convert to mention
+        for nomination in result:
+            # "get_user"/channel/guild only grabs from the bot's cache. "fetch" actually polls the API for it (if
+            # it's not in the cache)
+            author: str
+            guild: str
+            channel: str
 
-                guild = await bot.fetch_guild(nomination[1])
-                guild = guild.name
+            try:
+                authorRoutine = await bot.fetch_user(nomination[4])
+                author = f"<@{authorRoutine.id}>"  # Convert to mention
+            except AttributeError as user_not_found:
+                print(f"Error: An user wasn't found when trying to display nominations. "
+                      f"Full error: {user_not_found}")
+                author = nomination[4]
 
-                channel = await bot.fetch_channel(nomination[2])
-                channel = channel.name
+            try:
+                guildRoutine = await bot.fetch_guild(nomination[1])
+                guild = guildRoutine.name
+            except AttributeError as guild_not_found:
+                print(f"Error: A guild wasn't found when trying to display nominations. "
+                      f"Full error: {guild_not_found}")
+                guild = nomination[1]
 
-                msg += f"Message (up to 255 characters): {nomination[6]}\n" \
-                       f"Category: {nomination[5]}\n" \
-                       f"Author: {author}\n" \
-                       f"Guild: {guild}\n" \
-                       f"Channel: {channel}\n\n"
-        except AttributeError as object_not_found:
-            print(f"Error: An user/guild/channel probably wasn't found when trying to display nominations. "
-                  f"Full error: {object_not_found}")
-            # If an object wasn't found, display the IDs instead
-            for nomination in result:
-                msg += (f"Couldn't get user/guild/channel. Displaying IDs instead.\n"
-                        f"Message (up to 255 characters): {nomination[6]}\n"
-                        f"Category: {nomination[5]}\n"
-                        f"Author: {nomination[4]}\n"
-                        f"Guild: {nomination[1]}\n"
-                        f"Channel: {nomination[2]}\n\n")
-        finally:
+            try:
+                channelRoutine = await bot.fetch_channel(nomination[2])
+                channel = channelRoutine.name
+            except AttributeError as channel_not_found:
+                print(f"Error: A channel wasn't found when trying to display nominations. "
+                      f"Full error: {channel_not_found}")
+                channel = nomination[2]
+
+            msg += f"Message (up to 255 characters): {nomination[6]}\n" \
+                   f"Category: {nomination[5]}\n" \
+                   f"Author: {author}\n" \
+                   f"Guild: {guild}\n" \
+                   f"Channel: {channel}\n\n"
+
             await ctx.send(msg)
 
 
