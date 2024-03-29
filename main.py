@@ -17,7 +17,7 @@ bot = interactions.Client(intents=interactions.Intents.ALL)
 database = SQLManager()  # Database connection
 # categories = ["Worst Idea", "Best Idea", "Biggest Lie", "Worst Bit", "Best Bit", "Least Funny Recurring Joke",
 #               "Craziest Working Gaslight", "Funniest Recurring Joke", "Dumbest Discussion"]
-_VERSION = "3.2.3"
+_VERSION = "3.2.4"
 
 categories = database.get_categories()
 categories = [c[0] for c in categories]
@@ -318,7 +318,6 @@ async def admin_restart_connection(ctx: SlashContext):
 @slash_command(
     name="admin",
     description="Commands for the bot administrator",
-    scopes=[os.getenv("TEST_GUILD_ID")],
     sub_cmd_name="say",
     sub_cmd_description="Make the bot say something."
 )
@@ -339,7 +338,6 @@ async def admin_say(ctx: SlashContext, message: str):
 @slash_command(
     name="admin",
     description="Commands for the bot administrator",
-    scopes=[os.getenv("TEST_GUILD_ID")],
     sub_cmd_name="shutdown",
     sub_cmd_description="Shuts down the bot."
 )
