@@ -17,7 +17,7 @@ bot = interactions.Client(intents=interactions.Intents.ALL)
 database = SQLManager()  # Database connection
 # categories = ["Worst Idea", "Best Idea", "Biggest Lie", "Worst Bit", "Best Bit", "Least Funny Recurring Joke",
 #               "Craziest Working Gaslight", "Funniest Recurring Joke", "Dumbest Discussion"]
-_VERSION = "3.2.5"
+_VERSION = "3.2.6"
 
 categories = database.get_categories()
 categories = [c[0] for c in categories]
@@ -25,8 +25,8 @@ print("Found categories: ", categories)
 
 # Options for the nominations command
 choices_nominations = []
-for category in categories:
-    choices_nominations.append(SlashCommandChoice(name=category, value=category))
+for categoryName in categories:
+    choices_nominations.append(SlashCommandChoice(name=categoryName, value=categoryName))
 
 
 # === EVENTS ===
@@ -57,12 +57,14 @@ async def ping(ctx: SlashContext):
 async def about(ctx: SlashContext):
     await ctx.send(f"Created by Connor Midgley.\n"
                    "Source code available at https://github.com/GameMagma/NewNakamoto \n"
-                   f"Version {_VERSION}\n"
-                   "New features:\n"
+                   f"Version {_VERSION}\n\n"
+                   
+                   "New features for 3.2.x:\n"
                    "- You can now nominate messages for The Orwell Awards\n"
                    "- You can now view the nominations for The Orwell Awards\n"
                    "- Buh\n"
-                   "- Statuses Added\n",
+                   "- Statuses Added\n"
+                   "- Added Deferring\n",
                    ephemeral=True)
 
 
@@ -72,6 +74,7 @@ async def about(ctx: SlashContext):
     scopes=[os.getenv("TEST_GUILD_ID")]
 )
 async def dbtest(ctx: SlashContext):
+    await ctx.defer()
     await ctx.send(database.get_wallet(ctx.author.id)[1])
 
 
@@ -93,6 +96,8 @@ async def dbtest(ctx: SlashContext):
     choices=choices_nominations
 )
 async def get_nominations(ctx: SlashContext, nominator: User = None, category: str = None):
+    await ctx.defer()
+
     result = database.get_nomination(nominator, category)
 
     if result is None:
@@ -104,9 +109,8 @@ async def get_nominations(ctx: SlashContext, nominator: User = None, category: s
 
         print("Formatting")
 
-        # TODO: Refactor this try block to be 3 separate try blocks: One for each fetch
         for nomination in result:
-            # "get_user"/channel/guild only grabs from the bot's cache. "fetch" actually polls the API for it (if
+            # "get_user"/channel/guild only grabs from the cache. "fetch" actually polls the API for it (if
             # it's not in the cache)
             author: str
             guild: str
@@ -164,6 +168,8 @@ async def nominate(ctx: ContextMenuContext):
 
     :param ctx: The message this command was called on
     """
+    await ctx.defer()  # Shows "Bot is thinking" message
+
     msg: Message = ctx.target
     category_selection = Modal(
         ShortText(
@@ -340,7 +346,7 @@ async def admin_say(ctx: SlashContext, message: str):
     name="status",
     description="Commands for status management",
     sub_cmd_name="set",
-    sub_cmd_description="Set the bot's status."
+    sub_cmd_description="Set the bot status."
 )
 @slash_option(
     name="status",
@@ -421,4 +427,4 @@ async def shutdown(ctx: SlashContext):
         await ctx.send("You do not have permission to use this command.", ephemeral=True)
 
 
-bot.start(os.getenv("DISCORD_TOKEN"))
+bot.start(os.getenv("TEST_DISCORD_TOKEN"))
