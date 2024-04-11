@@ -5,6 +5,7 @@ import interactions
 from interactions import slash_command, SlashContext, OptionType, slash_option, listen, ModalContext, User, \
     SlashCommandChoice
 from interactions import message_context_menu, ContextMenuContext, Message, Modal, ShortText
+from interactions.api.events import MessageCreate
 
 from SQLManager import SQLManager
 
@@ -17,7 +18,7 @@ bot = interactions.Client(intents=interactions.Intents.ALL)
 database = SQLManager()  # Database connection
 # categories = ["Worst Idea", "Best Idea", "Biggest Lie", "Worst Bit", "Best Bit", "Least Funny Recurring Joke",
 #               "Craziest Working Gaslight", "Funniest Recurring Joke", "Dumbest Discussion"]
-_VERSION = "3.2.6"
+_VERSION = "3.2.7"
 
 categories = database.get_categories()
 categories = [c[0] for c in categories]
@@ -64,7 +65,8 @@ async def about(ctx: SlashContext):
                    "- You can now view the nominations for The Orwell Awards\n"
                    "- Buh\n"
                    "- Statuses Added\n"
-                   "- Added Deferring\n",
+                   "- Added Deferring\n"
+                   "- Added complaint management system\n",
                    ephemeral=True)
 
 
@@ -147,6 +149,19 @@ async def get_nominations(ctx: SlashContext, nominator: User = None, category: s
                    f"Channel: {channel}\n\n"
 
             await ctx.send(msg)
+
+
+@listen(MessageCreate)
+async def on_message_create(event: MessageCreate):
+    if event.message.channel.id == int(os.getenv("HR_CHANNEL_ID")):
+        await event.message.author.send("Thank you for the complaint, it has been filed and will be addressed in a "
+                                        "timely manner. Your input means very much to us. You can view all pending "
+                                        "complaints here:You can see the list of complaints "
+                                        "[here](https://docs.google.com/document/d"
+                                        "/1wjBOPLrslvETZ3WA2r3dwANrnwkd8oWlAthVFlhQ6cg/edit?usp=sharing).")
+        print("Complaint received")
+        await event.message.delete()
+
 
 
 # === CONTEXT MENU COMMANDS ===
@@ -427,4 +442,4 @@ async def shutdown(ctx: SlashContext):
         await ctx.send("You do not have permission to use this command.", ephemeral=True)
 
 
-bot.start(os.getenv("TEST_DISCORD_TOKEN"))
+bot.start(os.getenv("DISCORD_TOKEN"))

@@ -16,6 +16,9 @@ load_dotenv()  # Loads the .env file
 class SQLManager:
     # cnx: MySQLConnection  # The connection used to connect to the database
 
+    # TODO: Keeping the connection open the entire time wastes resources, and doesn't work seeing as the connection
+    # TODO:     closes itself anyways. Instead, just have a method or class that opens a connection whenever we need it.
+
     def __init__(self):
         # self._connection = SQLConnection()
         print("Establishing connection to Nakamoto database...")
