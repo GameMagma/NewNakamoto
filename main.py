@@ -155,11 +155,10 @@ async def get_nominations(ctx: SlashContext, nominator: User = None, category: s
 async def on_message_create(event: MessageCreate):
     if event.message.channel.id == int(os.getenv("HR_CHANNEL_ID")):
         await event.message.author.send("Thank you for the complaint, it has been filed and will be addressed in a "
-                                        "timely manner. Your input means very much to us. You can view all pending "
-                                        "complaints here:You can see the list of complaints"
+                                        "timely manner. Your input means very much to us. You can see the list of complaints"
                                         "[here](https://docs.google.com/document/d"
                                         "/1wjBOPLrslvETZ3WA2r3dwANrnwkd8oWlAthVFlhQ6cg/edit?usp=sharing)"
-                                        "(updates automatically).")
+                                        " (updates automatically).")
         print("Complaint received")
         await event.message.delete()
 
