@@ -18,7 +18,7 @@ bot = interactions.Client(intents=interactions.Intents.ALL)
 database = SQLManager()  # Database connection
 # categories = ["Worst Idea", "Best Idea", "Biggest Lie", "Worst Bit", "Best Bit", "Least Funny Recurring Joke",
 #               "Craziest Working Gaslight", "Funniest Recurring Joke", "Dumbest Discussion"]
-_VERSION = "3.2.8"
+_VERSION = "3.2.9"
 
 categories = database.get_categories()
 categories = [c[0] for c in categories]
@@ -65,7 +65,6 @@ async def about(ctx: SlashContext):
                    "- You can now view the nominations for The Orwell Awards\n"
                    "- Buh\n"
                    "- Statuses Added\n"
-                   "- Added Deferring\n"
                    "- Added complaint management system\n",
                    ephemeral=True)
 
@@ -76,7 +75,6 @@ async def about(ctx: SlashContext):
     scopes=[os.getenv("TEST_GUILD_ID")]
 )
 async def dbtest(ctx: SlashContext):
-    await ctx.defer()
     await ctx.send(database.get_wallet(ctx.author.id)[1])
 
 
@@ -98,8 +96,6 @@ async def dbtest(ctx: SlashContext):
     choices=choices_nominations
 )
 async def get_nominations(ctx: SlashContext, nominator: User = None, category: str = None):
-    await ctx.defer()
-
     result = database.get_nomination(nominator, category)
 
     if result is None:
@@ -183,8 +179,6 @@ async def nominate(ctx: ContextMenuContext):
 
     :param ctx: The message this command was called on
     """
-    await ctx.defer()  # Shows "Bot is thinking" message
-
     msg: Message = ctx.target
     category_selection = Modal(
         ShortText(
